@@ -25,7 +25,7 @@
 
 #pragma comment(lib,"ws2_32.lib") //Winsock Library
 
-#define DEVICE_NAME "phantom1"
+#define DEVICE_NAME "phantom2"
 //#define SERVER "127.0.0.1"  //ip address of udp server
 //#define SERVER "192.168.205.128"  //ip address of udp server
 #define SERVER "192.168.50.132"
@@ -49,8 +49,6 @@ void ssToChar(char* dst, stringstream* src);
 
 int main(int argc, char* argv[])
 {
-	Sleep(500);
-
 	char sendtoBuf[BUFLEN];
 	char recvBuf[BUFLEN];
 	stringstream ss;
@@ -104,7 +102,7 @@ int main(int argc, char* argv[])
 	
 
 	//	use sendto() before using recvfrom() to implicitly bind
-	for (int i = 0; i < 6; i++)
+	/*for (int i = 0; i < 6; i++)
 		ss << "0 ";
 
 	ssToChar(sendtoBuf, &ss);
@@ -114,8 +112,8 @@ int main(int argc, char* argv[])
 		printf("1sendto() failed with error code : %d", WSAGetLastError());
 		system("PAUSE");
 		exit(EXIT_FAILURE);
-	}
-	
+	}*/
+	Sleep(1000);
 	while( !_kbhit() )
     {
 		//----------omni----------
@@ -146,16 +144,16 @@ int main(int argc, char* argv[])
 
         //receive a reply and print it
         //clear the buffer by filling null, it might have previously received data
-        memset(recvBuf,'\0', BUFLEN);
-        cout << "wait force..." << endl;
+        memset(recvBuf,'\0', BUFLEN);cout << "1" << endl;
+        //cout << "wait force..." << endl;
 		//try to receive some data, this is a blocking 
         if (recvfrom(s, recvBuf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen) == SOCKET_ERROR)
         {
             printf("recvfrom() failed with error code : %d" , WSAGetLastError());
             exit(EXIT_FAILURE);
         }
-        puts(recvBuf);
-
+        //puts(recvBuf);
+cout << "2" << endl;
 		char* token = NULL;
 		//char* rest = NULL;
 		const char* delim = " ";
@@ -163,7 +161,7 @@ int main(int argc, char* argv[])
 		force_device[0] = atof( strtok( recvBuf, delim ) );
 		force_device[1] = atof( strtok( NULL, delim ) );
 		force_device[2] = atof( strtok( NULL, delim ) );
-
+		cout << "3" << endl;
 		//generate force
 		if ( !hdWaitForCompletion( Scheduler_ForceOutput, HD_WAIT_CHECK_STATUS ) )
         {
@@ -171,8 +169,8 @@ int main(int argc, char* argv[])
             _getch();
             break;
         }
-		
-		Sleep( 50 );    //sampling time
+
+		Sleep( 10 );    //sampling time
 	}
 	
 	//----------omni----------
@@ -200,16 +198,18 @@ HDCallbackCode HDCALLBACK GetInfoCallback( void *data )
 {
 	HDdouble position_device[3];
 	HDdouble joint_angle_device[3];
+	HDdouble current_velocity[3];
 	
 	hdBeginFrame( device_id );
 	hdGetDoublev( HD_CURRENT_POSITION, position_device );
 	hdGetDoublev( HD_CURRENT_JOINT_ANGLES, joint_angle_device );
+	hdGetDoublev( HD_CURRENT_VELOCITY, current_velocity );
 	//cout << "z(uav_x):" << position_device1[2] << " x(uav_y):" << position_device1[0] << " y(uav_z):" << position_device1[1] << endl;	//for testing
-
+	cout << "v_x:" << current_velocity[2] << " v_y:" << current_velocity[0] << " v_z: " << current_velocity[1] << endl;
 	//update current position
 	for( int i = 0; i < 3; i++ )
 	{
-		current_pos[i] = position_device[i] * 0.01;	//mapping
+		current_pos[i] = position_device[i] * 1;	//mapping
 		current_joint_angle[i] = joint_angle_device[i];
 	}
 
@@ -234,10 +234,11 @@ HDCallbackCode HDCALLBACK ForceOutputCallback(void *data)
 {
 	hduVector3Dd force(force_device[0], force_device[1], force_device[2]);
 	//HDdouble force[3];
+	/*
 	for(int i = 0; i < 3; i++)
 		cout<< force[i] << " ";
 	cout << endl;
-	
+	*/
 	hdBeginFrame(device_id);
 	hdMakeCurrentDevice(device_id);
 	hdSetDoublev(HD_CURRENT_FORCE, force);
